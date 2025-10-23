@@ -1,0 +1,344 @@
+---
+title: "Describing and Visualizing a dataset"
+execute:
+  message: false
+  warning: false
+format:
+  html:
+    theme: minty
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+editor: visual
+---
+
+A report describing a study based on quantitative analysis should include a description of the dataset that was used for the study. This should include how the data were collected and a description of the distribution of each variable, including both some simple visualizations and some descriptive statistics.
+
+## Descriptive statistics
+
+Descriptive statistics include measures of ***spread*** and ***central tendency*** for continuous variables and ***proportions*** for categorical variables.
+
+### Continuous variables
+
+Measures of central tendency include the average (which is sensitive to outliers) and the median (which is not). Measures of spread include the standard deviation (which is sensitive to outliers), range (which are extremely sensitive to outliers), and ranges of percentiles (which are not sensitive to outliers).
+
+A reasonable set of descriptive statistics for a continuous variable would be:
+
+-   Sample mean (the average)
+
+-   95th-percentile confidence interval for population mean
+
+-   Median (the value that has the same number of observations below and above)
+
+-   Standard deviation (related to the average difference between observations and the mean)
+
+-   Minimum (the lowest value of all observations)
+
+-   Maximum (the highest value of all observations)
+
+-   Range (the minimum and the the maximum, or the difference between those values)
+
+-   Nth Percentile (the value that N percent of all observations are lower than)
+
+-   Interquartile range (the 25th and 75th percentiles, or the difference between those values)
+
+| Statistic | Definition | Excel funtion | R function |
+|------------------|------------------|------------------|------------------|
+| Sample mean | The average | `=AVERAGE()` | `mean()` |
+| Median | The value that has the same number of observations below and above | `=MEDIAN()` | `median()` |
+| Population mean (95-percent confidence) | We can be 95-percent confident that the population mean is in this range | Average plus or minus margin of error, which is `=1.96 * (STDEV.S() / SQRT(COUNT()))` | `t.test()` |
+| Standard deviation | Related to the average difference between observations and the mean | `=STDEV.S()` | `sd()` |
+| Minimum | The lowest value of all observations | `=MIN()` | `min()` |
+| Maximum | The highest value of all observations | `=MAX()` | `max()` |
+| Nth percentile | The value that N percent of all observations are lower than | `=PERCENTILE.INC(, N)` | `quantile( , props = N)` |
+
+#### Excel
+
+Here is how you would enter the Excel functions listed above to calculate descriptive statistics:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+library(here)
+
+here("screenshots",
+     "cont-desc-formula.png") |>
+  knitr::include_graphics()
+```
+
+And here are the results those formulas would generate:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "cont-desc-values.png") |>
+  knitr::include_graphics()
+```
+
+
+
+#### R
+
+If I start by loading my data:
+
+```{r}
+library(here)
+library(tidyverse)
+
+data <- here("sample-data.csv") |>
+  read_csv()
+```
+
+I can use the appropriate functions to calculate values descriptive statistics for each of my variables. I'll demonstrate here for a variable called "Distance to transit".
+
+Here is the the sample mean:
+
+```{r}
+
+mean(data$`Distance to transit`)
+```
+
+You can use a one-sample t-test to get the 95-percent confidence interval for the population mean:
+
+```{r}
+t.test(data$`Distance to transit`)
+```
+
+We can be 95-percent confident that the average distance to transit for the full population would be between 2.72 and 2.75 miles.
+
+Here is the median:
+
+```{r}
+
+median(data$`Distance to transit`)
+```
+
+Here is the standard deviation:
+
+```{r}
+
+sd(data$`Distance to transit`)
+```
+
+Here is the minimum:
+
+```{r}
+min(data$`Distance to transit`)
+```
+
+Here is the maximum:
+
+```{r}
+max(data$`Distance to transit`)
+```
+
+Here is the range (which you could also just report as the minimum and maximum values):
+
+```{r}
+
+max(data$`Distance to transit`) - min(data$`Distance to transit`)
+```
+
+Here are the 25th and 50th percentiles:
+
+```{r}
+ 
+quantile(data$`Distance to transit`, probs = c(0.25, 0.75))
+```
+
+And here is the interquartile range (which you could also just report as the 25th and 75th percentiles):
+
+```{r}
+IQR(data$`Distance to transit`)
+```
+
+I can also use a single function, `summary()`, to get a few of the above descriptive statistics all at once:
+
+```{r}
+summary(data$`Distance to transit`)
+```
+
+### Categorical variables
+
+You can fully describe a categorical variable as the proportion in each category. It can also be helpful to report a 95-percent confidence interval for each proportion
+
+#### Excel
+
+You can use a pivot table to get the number of observations in each category, and then you can calculate proportions from those totals.
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "pivot-table.gif") |>
+  knitr::include_graphics()
+```
+
+The formula for the 95-percent confidence interval for a proportion is:
+
+$$
+p \pm \sqrt{\frac{p(1-p)}{n}}
+$$
+
+where p is the proportion and n is the number of observations.
+
+So in the above example, you could add those formulas like this:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "prop-conf-formula.png") |>
+  knitr::include_graphics()
+```
+
+And get these values:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "prop-conf-values.png") |>
+  knitr::include_graphics()
+```
+
+#### R
+
+To get the proportion of my sample that has a material type of "wood," I would just count the number of observations with that value and divide it by the total number of observations.
+
+```{r}
+
+sum(data$Material == "Wood") / nrow(data)
+```
+
+To get a 95-percent confidence interval for that proportion, I can use the `prop.test()` function, where the first argument is the number of observations in a given category, and the second argument is the total number of observations in the sample.
+
+```{r}
+prop.test(sum(data$Material == "Wood"), nrow(data))
+
+```
+
+## Data Visualization
+
+It can be useful to use histograms to illustrate distributions of continuous variables, bar charts for proportions of categorical variables, and scatter plots to show relationships between pairs of variables.
+
+### Individual continuous variables
+
+Histograms show bins of variable values along the x-axis, with the y-axis indicating the number of observations in each bin.
+
+#### Excel
+
+Histograms are one of the pre-defined chart types in Excel. You can control the number of bins under the "format x-axis" options, and you can control number format through the number format of your background data.
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "histogram.gif") |>
+  knitr::include_graphics()
+```
+
+#### R
+
+You can use the `geom_histogram()` function within the ggplot framework to create a histogram.
+
+```{r}
+
+ggplot(data) +
+  geom_histogram(aes(x = `Distance to transit`),
+                 color = "blue",
+                 fill = "yellow",
+                 binwidth = 0.25) +
+  theme_minimal()
+```
+
+### Individual categorical variables
+
+You'll be tempted to use a pie chart to show proportions, but there are a number of reasons not to do this. A good alternative can be a bar chart, particularly if you want to include error bars to indicate 95-percent confidence levels.
+
+Visualizing proportions is not as important as visualizing the distribution of continuous variables. The visualization won't really give you any information you can't get from descriptive statistics. A histogram, on the other hand, can reveal a lot of information that isn't apparent from descriptive statistics.
+
+#### Excel
+
+Here is how you would create a bar chart with error bars in Excel,
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "bar-chart.gif") |>
+  knitr::include_graphics()
+```
+
+#### R
+
+To create a bar chart with counts in R, you can use the `geom_bar()` function within the ggplot framework.
+
+```{r}
+ggplot(data) +
+  geom_bar(aes(x = Material))
+```
+
+To show proportions with error bars, you'll need to first create a little summary table.
+
+```{r}
+material_summary <- data |>
+  group_by(Material) |>
+  summarise(count = n()) |>
+  mutate(proportion = count / nrow(data)) |>
+  mutate(MoE = sqrt((proportion * (1-proportion))/nrow(data))) |>
+  mutate(conf.low = proportion - MoE,
+         conf.hi = proportion + MoE) |>
+  select(-count)
+
+material_summary
+```
+
+And then you can use `geom_bar()` to create a bar chart from that summary table.
+
+```{r}
+ggplot(material_summary, 
+       aes(x = Material,
+           y = proportion)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = conf.low,
+                    ymax = conf.hi),
+                width = 0.2) + 
+  scale_y_continuous(name = "Proportion of homes",
+                     breaks = breaks <- seq(0, 0.7, by=0.1),
+                     labels = paste0(breaks*100, "%")) +
+  theme_minimal()
+```
+
+### Pairs of variables
+
+You might also want to visualize the relationship between each predictor variable and your outcome variable.
+
+#### Excel
+
+In Excel, you can create a scatter plot to show the relationship between two continuous variables. It is a standard practice for your outcome to be on the y axis.
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "scatter-chart.gif") |>
+  knitr::include_graphics()
+```
+
+You can use a box and whisker chart to show differences in the outcome by category.
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "box-plot.gif") |>
+  knitr::include_graphics()
+```
+
+#### R
+
+In R, you can create a scatter plot to show relationships between continuous variables:
+
+```{r}
+ggplot(data) +
+  geom_point(aes(x = `Distance to transit`,
+                 y = `Sales price`),
+             size = 0.5,
+             alpha = 0.2)
+```
+
+Or between a categorical variable and a continuous variable.
+
+```{r}
+ggplot(data) +
+  geom_jitter(aes(x = Material,
+                  y = `Sales price`),
+             size = 0.5,
+             alpha = 0.2)
+```
+
