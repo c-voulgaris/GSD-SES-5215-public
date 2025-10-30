@@ -1,0 +1,99 @@
+---
+title: "Estimating a simple regression model"
+execute:
+  message: false
+  warning: false
+format:
+  html:
+    theme: minty
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+editor: visual
+---
+
+You can estimate a simple linear regression model in both R and Excel.
+
+## R
+
+We'll start by loading a sample dataset.
+
+```{r, message=FALSE}
+library(here)
+library(tidyverse)
+
+my_data <- here("sample-data.csv") |>
+  read_csv()
+```
+
+In R, we can estimate a linear regression model using the function `lm()`.
+
+```{r}
+model = lm(`Sales price` ~ 
+             `Distance to transit` + 
+             `Year of construction` + 
+             `Number of rooms` +
+             `Material`, 
+           data = my_data)
+
+summary(model)
+```
+
+Note that the categories on your categorical variable appear in alphabetical order and the default/baseline category is the one that comes first in the alphabet. You can change how R perceives the order of the categories by changing that variable from a character data type to a factor, with a speficied order of levels.
+
+```{r}
+my_data <- my_data |>
+  mutate(Material = factor(Material, levels = c("Wood",
+                                                "Gingerbread",
+                                                "Concrete",
+                                                "Stucco",
+                                                "Brick")))
+
+model = lm(`Sales price` ~ 
+             `Distance to transit` + 
+             `Year of construction` + 
+             `Number of rooms` +
+             `Material`, 
+           data = my_data)
+
+summary(model)
+```
+
+## Excel
+
+Here is how you would generate regression coefficients and their associated standard errors (a standard error is sort of like a standard deviation and is related to the margin of error) in Excel.
+
+First, set up a table with three rows labeled (something like) "Coefficient", "Standard error", and "R-square/Res-std-err" and one more column than you have predictor variables (including a binary predictor for each category in your categorical variable that isn't the baseline/default category). Label the columns in the reverse to the order they appear in your dataset, and label the last column something like "constant" or "intercept."
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "regression-setup.png") |>
+  knitr::include_graphics()
+```
+
+In the top-left cell of that table, type the formula `=LINEST()` with four arguments: the outcome variable, the set of predictor variables, TRUE (to indicate that you also need to estimate the constant), and TRUE (to indicate that you also need standard errors).
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "excel-regression.gif") |>
+  knitr::include_graphics()
+```
+
+You will need to manually calculate p-values for your coefficients from the estimates and standard errors.
+
+First calculate a t-statistic as the ratio of the coefficient to the estimate, then calculate the p-value with the formula: `=T.DIST.2T(ABS({t-stat}, {df})`, where `{t-stat}` is the t-statistic and `{df}` is the degrees of freedom, which is the sample size minus the number of predictors (including categories as separate predictors). Here is what your formulas would look like:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "p-val-formulas.png") |>
+  knitr::include_graphics()
+```
+
+And here's how the values would look:
+
+```{r, echo=FALSE, message=FALSE, out.width = '100%'}
+here("screenshots",
+     "p-val-values.png") |>
+  knitr::include_graphics()
+```
